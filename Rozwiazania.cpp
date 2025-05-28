@@ -242,3 +242,30 @@ std::pair<std::vector<int>, int> Rozwiazania::fneh(const Matrix& czasy) {
 
     return {kolejnosc, C.back().back()};
 }
+
+std::pair<std::vector<int>, int> Rozwiazania::bound(const Zadanie &z){
+
+}
+
+//oblicznie LB
+int Rozwiazania::obliczLB(const Node& node, int m) //m -> ilosc maszyn
+{
+    vector<int> czasyKoniec(m, 0);
+    //najpierw liczymy dla zadan uszeregowanych z przerwami
+    for (int i = 0; i < node.level; i++) {
+        int job = node.path[i];
+        czasyKoniec[0] += z.czasy[job][0];
+        for (int k = 1; k < m; k++) {
+            czasyKoniec[k] = max(czasyKoniec[k], czasyKoniec[k-1]) + z.czasy[job][k];
+        }
+    }
+
+    //doklejamy wszystkie zadania, zakladajac brak przerw, tylko dla ostatniej maszyny, wczesniejsze czasy zakonczenia nie maja znaczenia
+    for (int j = 0; j < z.liczbaZadan(); j++) {
+        if (!node.assigned[j]) {
+            czasyKoniec[m-1] += z.czasy[j][m-1];
+        }
+    }
+
+    return czasyKoniec[m-1];
+}
