@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <limits>
 #include <deque>
+#include <queue>
 
 // Obliczanie wartości Cmax dla danej permutacji zadań
 //kade zadanie kończy sie na kazdej maszynie, czas ostaniego zadnia na ostaniej maszynie i zachowuje permutacje z najmniejszym cmax
@@ -27,7 +28,7 @@ int Rozwiazania::calculateMakespan(const vector<int>& perm, const Matrix& times,
 }
 
 // Brute-force: przegląd wszystkich permutacji
-int Rozwiazania::bruteForceMakespan(const Zadanie& z) {
+int Rozwiazania::bruteForceMakespan() {
     int n = z.liczbaZadan();
     int m = z.liczbaMaszyn();
     vector<int> perm(n);
@@ -45,16 +46,15 @@ int Rozwiazania::bruteForceMakespan(const Zadanie& z) {
 
 
 //NEH 
-
-std::pair<std::vector<int>, int> Rozwiazania::neh(const Matrix& czasy) {
-    int n = czasy.size();
-    int m = czasy[0].size();
+std::pair<std::vector<int>, int> Rozwiazania::neh() {
+    int n = z.liczbaZadan();
+    int m = z.liczbaMaszyn();
 
     std::vector<std::pair<int, int> > sumaIndex;
     for (int i = 0; i < n; ++i) {
         int suma = 0;
         for (int j = 0; j < m; ++j) {
-            suma += czasy[i][j];
+            suma += z.czasy[i][j];
         }
         sumaIndex.push_back({-suma, i});
     }
@@ -75,7 +75,7 @@ std::pair<std::vector<int>, int> Rozwiazania::neh(const Matrix& czasy) {
             Matrix C(tymczasowa.size(), std::vector<int>(m, 0));
             for (size_t i = 0; i < tymczasowa.size(); ++i) {
                 for (int j = 0; j < m; ++j) {
-                    int czas = czasy[tymczasowa[i]][j];
+                    int czas = z.czasy[tymczasowa[i]][j];
                     if (i == 0 && j == 0)
                         C[i][j] = czas;
                     else if (i == 0)
@@ -101,7 +101,7 @@ std::pair<std::vector<int>, int> Rozwiazania::neh(const Matrix& czasy) {
         Matrix C(kolejnosc.size(), std::vector<int>(m, 0));
         for (size_t i = 0; i < kolejnosc.size(); ++i) {
             for (int j = 0; j < m; ++j) {
-                int czas = czasy[kolejnosc[i]][j];
+                int czas = z.czasy[kolejnosc[i]][j];
                 if (i == 0 && j == 0)
                     C[i][j] = czas;
                 else if (i == 0)
@@ -120,7 +120,7 @@ std::pair<std::vector<int>, int> Rozwiazania::neh(const Matrix& czasy) {
 
 
 // Algorytm Johnsona ( dla 2 maszyn)
-vector<int> Rozwiazania::johnsonAlgorithm(const Zadanie& z) {
+vector<int> Rozwiazania::johnsonAlgorithm() {
     int n = z.liczbaZadan();
     const Matrix& times = z.czasy;
     vector<bool> used(n, false); // które zadania już dodano
@@ -156,16 +156,16 @@ vector<int> Rozwiazania::johnsonAlgorithm(const Zadanie& z) {
 //FNEH
 //Nie oblicza za kadym razem makespan tylko wykorzystuje wczesniej obliczone i aktualizuje tylko te co uległy zmianie
 
-std::pair<std::vector<int>, int> Rozwiazania::fneh(const Matrix& czasy) {
-    int n = czasy.size();
-    int m = czasy[0].size();
+std::pair<std::vector<int>, int> Rozwiazania::fneh() {
+    int n = z.liczbaZadan();
+    int m = z.liczbaMaszyn();
 
     //Sortowanie zadań  malejaco dla sumy czasów wykonania
     std::vector<std::pair<int, int> > sumaIndex;
     for (int i = 0; i < n; ++i) {
         int suma = 0;
         for (int j = 0; j < m; ++j) {
-            suma += czasy[i][j];
+            suma += z.czasy[i][j];
         }
         sumaIndex.push_back({-suma, i}); // Używamy ujemnej wartości dla sortowania malejącego
     }
@@ -178,9 +178,9 @@ std::pair<std::vector<int>, int> Rozwiazania::fneh(const Matrix& czasy) {
     std::vector<std::vector<int> > C(1, std::vector<int>(m, 0));
     for (int j = 0; j < m; ++j) {
         if (j == 0)
-            C[0][j] = czasy[kolejnosc[0]][j];
+            C[0][j] = z.czasy[kolejnosc[0]][j];
         else
-            C[0][j] = C[0][j-1] + czasy[kolejnosc[0]][j];
+            C[0][j] = C[0][j-1] + z.czasy[kolejnosc[0]][j];
     }
 
     // Wstawianie kolejnych zadań w optymalne pozycje
@@ -209,22 +209,22 @@ std::pair<std::vector<int>, int> Rozwiazania::fneh(const Matrix& czasy) {
             // Obliczanie dla wstawionego zadania
             for (int j = 0; j < m; ++j) {
                 if (pos == 0 && j == 0)
-                    nowa_C[pos][j] = czasy[zadanie][j];
+                    nowa_C[pos][j] = z.czasy[zadanie][j];
                 else if (pos == 0)
-                    nowa_C[pos][j] = nowa_C[pos][j-1] + czasy[zadanie][j];
+                    nowa_C[pos][j] = nowa_C[pos][j-1] + z.czasy[zadanie][j];
                 else if (j == 0)
-                    nowa_C[pos][j] = nowa_C[pos-1][j] + czasy[zadanie][j];
+                    nowa_C[pos][j] = nowa_C[pos-1][j] + z.czasy[zadanie][j];
                 else
-                    nowa_C[pos][j] = std::max(nowa_C[pos][j-1], nowa_C[pos-1][j]) + czasy[zadanie][j];
+                    nowa_C[pos][j] = std::max(nowa_C[pos][j-1], nowa_C[pos-1][j]) + z.czasy[zadanie][j];
             }
             
             // Obliczanie dla zadań po wstawionym
             for (size_t i = pos+1; i < tymczasowa_kolejnosc.size(); ++i) {
                 for (int j = 0; j < m; ++j) {
                     if (j == 0)
-                        nowa_C[i][j] = nowa_C[i-1][j] + czasy[tymczasowa_kolejnosc[i]][j];
+                        nowa_C[i][j] = nowa_C[i-1][j] + z.czasy[tymczasowa_kolejnosc[i]][j];
                     else
-                        nowa_C[i][j] = std::max(nowa_C[i][j-1], nowa_C[i-1][j]) + czasy[tymczasowa_kolejnosc[i]][j];
+                        nowa_C[i][j] = std::max(nowa_C[i][j-1], nowa_C[i-1][j]) + z.czasy[tymczasowa_kolejnosc[i]][j];
                 }
             }
             
@@ -243,9 +243,6 @@ std::pair<std::vector<int>, int> Rozwiazania::fneh(const Matrix& czasy) {
     return {kolejnosc, C.back().back()};
 }
 
-std::pair<std::vector<int>, int> Rozwiazania::bound(const Zadanie &z){
-
-}
 
 //oblicznie LB
 int Rozwiazania::obliczLB(const Node& node, int m) //m -> ilosc maszyn
@@ -268,4 +265,52 @@ int Rozwiazania::obliczLB(const Node& node, int m) //m -> ilosc maszyn
     }
 
     return czasyKoniec[m-1];
+}
+
+std::pair<std::vector<int>, int> Rozwiazania::bound(){
+    int n = z.liczbaZadan();
+    int m = z.liczbaMaszyn();
+
+    std::priority_queue<Node, vector<Node>, greater<Node>> queue; //min heap
+
+    Node root(n); //tworzymy "korzen", brak zadan na maszynach
+    root.LB = obliczLB(root, m); //liczymy najlepszy mozliwy Cmax
+    queue.push(root); //dodajemy do kolejki -> namniejsze LB na gorze, czyli zaczynamy od najlepszych rozwiazan
+
+    vector<int> najlepszeKol;
+    int UB = neh().second;
+    
+    while (!queue.empty()) {
+        Node current = queue.top(); //rozpatrujemy najlepsze LB
+        queue.pop(); //wywalamy z kolejki
+
+        if (current.LB >= UB) {
+            continue; //jesli mamy lepszy wynik to robimy dalej -> bierzemy kolejny node
+        }
+
+        if (current.level == n) {  //jesli damy wszystkie zadania to liczymy Cmax
+            int currentMakespan = calculateMakespan(current.path,z.czasy, m);
+            if (currentMakespan < UB) { //jesli jest lepsze niz UB to updatujemy
+                UB = currentMakespan;
+                najlepszeKol = current.path;
+            }
+            continue; //kolejny node sprawdzamy
+        }
+
+        for (int j = 0; j < n; j++) { //dodajemy kolejne elementy -> kolejne węzły
+            if (!current.assigned[j]) {
+                Node child = current;
+                child.assigned[j] = true;
+                child.path.push_back(j);
+                child.level++;
+                child.LB = obliczLB(child, m);
+            
+                if (child.LB < UB) { //jesli nowy LB jest mniejszy od UB to dodajemy do kolejki
+                    queue.push(child);
+                }
+            }
+        }
+    }
+
+    return {najlepszeKol, UB};
 }

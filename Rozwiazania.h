@@ -26,19 +26,19 @@ public:
     static int calculateMakespan(const vector<int>& perm, const Matrix& times, int m);
 
     // Algorytm przeglądu zupełnego (brute-force)
-    static int bruteForceMakespan(const Zadanie& z);
+    int bruteForceMakespan();
     //Algorytm NEH
-    pair<vector<int>, int> neh(const Matrix& czasy);
+    pair<vector<int>, int> neh();
 
 
     // Algorytm Johnsona (dla 2 maszyn)
-    static vector<int> johnsonAlgorithm(const Zadanie& z);
+    vector<int> johnsonAlgorithm();
 
     //FNEH
-    std::pair<std::vector<int>, int> fneh(const Matrix& czasy);
+    std::pair<std::vector<int>, int> fneh();
 
     //bound and branch algorithm
-    std::pair<std::vector<int>, int> bound(const Zadanie& z);
+    std::pair<std::vector<int>, int> bound();
 
     //oblicznie LB dla Bound
     int obliczLB(const Node& node, int m);
