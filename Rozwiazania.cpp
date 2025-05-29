@@ -119,39 +119,70 @@ std::pair<std::vector<int>, int> Rozwiazania::neh() {
 }
 
 
-// Algorytm Johnsona ( dla 2 maszyn)
-vector<int> Rozwiazania::johnsonAlgorithm() {
+// Algorytm Johnsona (dla 2 maszyn)
+// vector<int> Rozwiazania::johnsonAlgorithm() {
+//     int n = z.liczbaZadan();
+//     const Matrix& times = z.czasy;
+//     vector<bool> used(n, false); // które zadania już dodano
+//     deque<int> sequence;         // kolejność wynikowa
+
+//     while (sequence.size() < n) {
+//         int minTime = numeric_limits<int>::max();
+//         int selectedJob = -1;
+//         bool firstMachine = true;
+
+//         // Szukanie zadania z minimalnym czasem na maszynie 1 lub 2
+//         for (int j = 0; j < n; ++j) {
+//             if (used[j]) continue;
+//             if (min(times[j][0], times[j][1]) < minTime) {
+//                 minTime = min(times[j][0], times[j][1]);
+//                 selectedJob = j;
+//                 firstMachine = (times[j][0] <= times[j][1]);
+//             }
+//         }
+
+//         // Dodajemy zadanie na początek lub koniec kolejki
+//         if (firstMachine)
+//             sequence.push_front(selectedJob);
+//         else
+//             sequence.push_back(selectedJob);
+
+//         used[selectedJob] = true;
+//     }
+
+//     return vector<int>(sequence.begin(), sequence.end());
+// }
+// Algorytm Johnsona (dla 2 maszyn)
+std::pair<std::vector<int>, int> Rozwiazania::johnsonAlgorithm(){
+    vector<int> gr1, gr2;
     int n = z.liczbaZadan();
-    const Matrix& times = z.czasy;
-    vector<bool> used(n, false); // które zadania już dodano
-    deque<int> sequence;         // kolejność wynikowa
 
-    while (sequence.size() < n) {
-        int minTime = numeric_limits<int>::max();
-        int selectedJob = -1;
-        bool firstMachine = true;
-
-        // Szukanie zadania z minimalnym czasem na maszynie 1 lub 2
-        for (int j = 0; j < n; ++j) {
-            if (used[j]) continue;
-            if (min(times[j][0], times[j][1]) < minTime) {
-                minTime = min(times[j][0], times[j][1]);
-                selectedJob = j;
-                firstMachine = (times[j][0] <= times[j][1]);
-            }
+    for(int i = 0; i < n; ++i) {
+        if (z.czasy[i][0] < z.czasy[i][1]) {
+            gr1.push_back(i); // Zadanie do pierwszej grupy (czas na m1 < czas na m2)
+        } else {
+            gr2.push_back(i); // Zadanie do drugiej grupy (czas na m1 >= czas na m2)
         }
-
-        // Dodajemy zadanie na początek lub koniec kolejki
-        if (firstMachine)
-            sequence.push_front(selectedJob);
-        else
-            sequence.push_back(selectedJob);
-
-        used[selectedJob] = true;
     }
 
-    return vector<int>(sequence.begin(), sequence.end());
+    // Sortowanie grup
+    sort(gr1.begin(), gr1.end(), [this](int a, int b) {
+        return z.czasy[a][0] < z.czasy[b][0]; // Sortowanie rosnąco po czasie na m1
+    });
+
+    sort(gr2.begin(), gr2.end(), [this](int a, int b) {
+        return z.czasy[a][1] > z.czasy[b][1]; // Sortowanie malejąco po czasie na m2
+    });
+
+    // Łączenie grup
+    vector<int> kolejnosc;
+    for (auto zadanie : gr1) kolejnosc.push_back(zadanie);
+    for (auto zadanie : gr2) kolejnosc.push_back(zadanie);
+
+    return {kolejnosc, calculateMakespan(kolejnosc, z.czasy, z.liczbaMaszyn())};
 }
+
+
 
 //FNEH
 //Nie oblicza za kadym razem makespan tylko wykorzystuje wczesniej obliczone i aktualizuje tylko te co uległy zmianie

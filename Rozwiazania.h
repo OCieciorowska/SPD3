@@ -32,7 +32,8 @@ public:
 
 
     // Algorytm Johnsona (dla 2 maszyn)
-    vector<int> johnsonAlgorithm();
+    //vector<int> johnsonAlgorithm();
+   std::pair<std::vector<int>, int> johnsonAlgorithm();
 
     //FNEH
     std::pair<std::vector<int>, int> fneh();

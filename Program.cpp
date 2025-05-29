@@ -43,19 +43,19 @@ void readFile(Matrix &czasy, const std::string& filename)
 int main() {
 
     // Przykładowa macierz czasów
-    // Matrix czasy = {
-    //     {54, 79},  // zadanie 0
-    //     {83, 3},  // zadanie 1
-    //     {15, 11},  // zadanie 2
-    //     {71, 99},
-    //     {77, 56},
-    //     {4, 79} 
+    Matrix czasy = {
+        {54, 79},  // zadanie 0
+        {83, 3},  // zadanie 1
+        {15, 11},  // zadanie 2
+        {71, 99},
+        {77, 56},
+        {4, 79} 
    
-    // };
+    };
 
-    Matrix czasy;
+    // Matrix czasy;
 
-    readFile(czasy, "test2.txt");
+    // readFile(czasy, "test2.txt");
 
     Zadanie zadanie(czasy);
 
@@ -63,13 +63,13 @@ int main() {
 
     std::cout << "=== Johnson (m=2) ===\n";
     auto start = std::chrono::high_resolution_clock::now();
-    auto kolejnosc = roz.johnsonAlgorithm();
+    auto wynik_john = roz.johnsonAlgorithm();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "Kolejnosc: ";
-    for (int j : kolejnosc)
+    for (int j : wynik_john.first)
         std::cout << j << " ";
-    std::cout << "\nCmax = " << roz.calculateMakespan(kolejnosc, zadanie.czasy, 2) << " (Czas: " << duration.count() << " μs)" <<std::endl;
+    std::cout << "\nCmax = " << wynik_john.second << " (Czas: " << duration.count() << " μs)" <<std::endl;
 
     std::cout << "\n=== Brute-force ===\n";
     start = std::chrono::high_resolution_clock::now();
