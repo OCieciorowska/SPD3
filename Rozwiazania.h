@@ -6,12 +6,12 @@ struct Node {
     vector<int> path;       // czesc zadan dodanych do szeregowania
     vector<bool> assigned;  // ktore zadania juz sa uszeregowane
     int level;             // obecna pozycja zadania (dodanego?)
-    int LB;              // Lower bound of the partial schedule
+    int LB;              // LB dla uszeregowanych zadan
     
-    // Constructor
+    // Konstruktor
     Node(int n) : assigned(n, false), level(0), LB(0) {}
     
-    // For priority queue (min-heap based on cost)
+    // Operator porównania dla kolejki priorytetowej
     bool operator>(const Node& other) const {
         return LB > other.LB;
     }

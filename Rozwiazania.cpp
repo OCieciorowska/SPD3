@@ -118,41 +118,7 @@ std::pair<std::vector<int>, int> Rozwiazania::neh() {
     return {kolejnosc, finalCmax};
 }
 
-
-// Algorytm Johnsona (dla 2 maszyn)
-// vector<int> Rozwiazania::johnsonAlgorithm() {
-//     int n = z.liczbaZadan();
-//     const Matrix& times = z.czasy;
-//     vector<bool> used(n, false); // które zadania już dodano
-//     deque<int> sequence;         // kolejność wynikowa
-
-//     while (sequence.size() < n) {
-//         int minTime = numeric_limits<int>::max();
-//         int selectedJob = -1;
-//         bool firstMachine = true;
-
-//         // Szukanie zadania z minimalnym czasem na maszynie 1 lub 2
-//         for (int j = 0; j < n; ++j) {
-//             if (used[j]) continue;
-//             if (min(times[j][0], times[j][1]) < minTime) {
-//                 minTime = min(times[j][0], times[j][1]);
-//                 selectedJob = j;
-//                 firstMachine = (times[j][0] <= times[j][1]);
-//             }
-//         }
-
-//         // Dodajemy zadanie na początek lub koniec kolejki
-//         if (firstMachine)
-//             sequence.push_front(selectedJob);
-//         else
-//             sequence.push_back(selectedJob);
-
-//         used[selectedJob] = true;
-//     }
-
-//     return vector<int>(sequence.begin(), sequence.end());
-// }
-// Algorytm Johnsona (dla 2 maszyn)
+// Algorytm Johnsona dla dwóch maszyn
 std::pair<std::vector<int>, int> Rozwiazania::johnsonAlgorithm(){
     vector<int> gr1, gr2;
     int n = z.liczbaZadan();
@@ -186,10 +152,11 @@ std::pair<std::vector<int>, int> Rozwiazania::johnsonAlgorithm(){
 
 //FNEH
 //Nie oblicza za kadym razem makespan tylko wykorzystuje wczesniej obliczone i aktualizuje tylko te co uległy zmianie
-
 std::pair<std::vector<int>, int> Rozwiazania::fneh() {
     int n = z.liczbaZadan();
     int m = z.liczbaMaszyn();
+
+    std::vector<int> wynik;
 
     //Sortowanie zadań  malejaco dla sumy czasów wykonania
     std::vector<std::pair<int, int> > sumaIndex;
@@ -202,76 +169,87 @@ std::pair<std::vector<int>, int> Rozwiazania::fneh() {
     }
     std::sort(sumaIndex.begin(), sumaIndex.end());
 
-    //pierwsze zadanie w kolejności
-    std::vector<int> kolejnosc = {sumaIndex[0].second};
-    
-    //tablica czasów zakończenia dla 1. zadania
-    std::vector<std::vector<int> > C(1, std::vector<int>(m, 0));
-    for (int j = 0; j < m; ++j) {
-        if (j == 0)
-            C[0][j] = z.czasy[kolejnosc[0]][j];
-        else
-            C[0][j] = C[0][j-1] + z.czasy[kolejnosc[0]][j];
+
+    wynik.push_back(sumaIndex[0].second); // Pierwsze zadanie w kolejności
+
+    std::vector<std::vector<std::pair<int, int>>> czasy; //tablica czasow (first -> przod, second -> w tyl)
+
+    czasy.resize(1); // [pozycja zadania][maszyna]
+    czasy[0].resize(m);
+
+    //uzupelnienie pierwszego zadania w przod
+    for (int i = 0; i<m; i++){
+        if(i==0) czasy[0][i] = std::make_pair(z.czasy[sumaIndex[0].second][i], 0);
+        else czasy[0][i] = std::make_pair(z.czasy[sumaIndex[0].second][i] + czasy[0][i-1].first, 0);
     }
 
-    // Wstawianie kolejnych zadań w optymalne pozycje
-    for (int k = 1; k < n; ++k) {
-        int zadanie = sumaIndex[k].second;
-        std::vector<int> najlepsza_kolejnosc;
-        int minCmax = std::numeric_limits<int>::max();
-        std::vector<std::vector<int> > najlepsza_C;
+    //uzupelnienie pierwszego zadania w tyl
+    for(int i = m-1; i>=0; i--){
+        if(i==m-1) czasy[0][i].second = z.czasy[sumaIndex[0].second][i];
+        else czasy[0][i].second = z.czasy[sumaIndex[0].second][i] + czasy[0][i+1].second;
+    }
 
-        // Próba wstawienia bieżącego zadania na wszystkie możliwe pozycje
-        for (size_t pos = 0; pos <= kolejnosc.size(); ++pos) {
-            // Tworzenie tymczasowej kolejności
-            std::vector<int> tymczasowa_kolejnosc = kolejnosc;
-            tymczasowa_kolejnosc.insert(tymczasowa_kolejnosc.begin() + pos, zadanie);
+    for( int p = 1; p<n; p++){ // p -> kolejny indeks z sumaIndex
+        int zadanie = sumaIndex[p].second; // indeks nowego zadania
+        int C = INT16_MAX;
+        int poz = 0; //pozycja w ktorej dodamy nowe zadanie
+        std::vector<std::pair<int,int>> czasyNaj(m); //czasy dla nowego zadania, na najlepszej pozycji
 
-            // Obliczanie nowej tablicy C z akceleracją
-            std::vector<std::vector<int> > nowa_C(tymczasowa_kolejnosc.size(), std::vector<int>(m, 0));
-            
-            // Kopiowanie wcześniejszych wartości dla zadań przed wstawionym
-            for (size_t i = 0; i < pos; ++i) {
-                for (int j = 0; j < m; ++j) {
-                    nowa_C[i][j] = C[i][j];
+        for(int k = 0; k<wynik.size()+1; k++){ // k -> pozycja w ktorej dodamy nowe zadanie
+            std::vector<std::pair<int, int>> czasyNowe(m); //czasy dla nowego zadania
+            int Cnowe=0;
+            //przeliczmy w przod
+            if(k==wynik.size()){ //dodajemy na koniec -> cmax = max(suma pj + auktualne pj), nie trzeba liczyc w tyl
+                for(int i = 0; i<m; i++){
+                    if(i==0) czasyNowe[i].first = czasy[k-1][i].first + z.czasy[sumaIndex[p].second][i];
+                    else czasyNowe[i].first = std::max(czasy[k-1][i].first, czasyNowe[i-1].first) + z.czasy[sumaIndex[p].second][i];
+                    Cnowe = std::max(Cnowe, czasyNowe[i].first);
                 }
             }
-            
-            // Obliczanie dla wstawionego zadania
-            for (int j = 0; j < m; ++j) {
-                if (pos == 0 && j == 0)
-                    nowa_C[pos][j] = z.czasy[zadanie][j];
-                else if (pos == 0)
-                    nowa_C[pos][j] = nowa_C[pos][j-1] + z.czasy[zadanie][j];
-                else if (j == 0)
-                    nowa_C[pos][j] = nowa_C[pos-1][j] + z.czasy[zadanie][j];
-                else
-                    nowa_C[pos][j] = std::max(nowa_C[pos][j-1], nowa_C[pos-1][j]) + z.czasy[zadanie][j];
-            }
-            
-            // Obliczanie dla zadań po wstawionym
-            for (size_t i = pos+1; i < tymczasowa_kolejnosc.size(); ++i) {
-                for (int j = 0; j < m; ++j) {
-                    if (j == 0)
-                        nowa_C[i][j] = nowa_C[i-1][j] + z.czasy[tymczasowa_kolejnosc[i]][j];
-                    else
-                        nowa_C[i][j] = std::max(nowa_C[i][j-1], nowa_C[i-1][j]) + z.czasy[tymczasowa_kolejnosc[i]][j];
+            else{
+                //liczymy w przod
+                for(int i = 0; i<m; i++){
+                    if(i==0) czasyNowe[i].first = (k==0 ? 0 : czasy[k-1][i].first) + z.czasy[sumaIndex[p].second][i]; //jesli jest to pierwsze zadanie to tylko czas zadania, inaczej czas skonczenia poprzedniego plus obecne zadanie
+                    else czasyNowe[i].first = std::max(czasyNowe[i-1].first, (k==0 ? 0 : czasy[k-1][i].first)) + z.czasy[sumaIndex[p].second][i]; //maks z poprzedniego zadania i zadania na poprzedniej maszynie (jesli na pozycji 0 -> czas skonczenia zadania na poprzedniej maszynie)
+                }
+
+                //obliczmy cmax
+                for(int i = 0; i<m; i++){
+                    if(k==wynik.size()) Cnowe = std::max(Cnowe, czasyNowe[i].first); //na koncu -> najwiekszy czas skonczenia zadania
+                    else Cnowe = std::max(Cnowe, czasy[k][i].second + czasyNowe[i].first); //wartosc w tyl dla maszyny poprzedniej i w przod dla maszyny obliczonej
                 }
             }
-            
-            int cmax = nowa_C.back().back();
-            if (cmax < minCmax) {
-                minCmax = cmax;
-                najlepsza_kolejnosc = tymczasowa_kolejnosc;
-                najlepsza_C = nowa_C;
+            if(Cnowe < C){ //jesli mamy lepszy Cmax, zapamietujemy i zapamietujemy pozycje
+                C = Cnowe;
+                poz = k;
+                czasyNaj = czasyNowe; //zapamietujemy czasy dla nowego zadania, na najlepszej pozycji
             }
         }
-        
-        kolejnosc = najlepsza_kolejnosc;
-        C = najlepsza_C;
+        //wstawiamy zadanie do wyniku na poz i przeliczmy czasy ogolne
+        wynik.emplace(wynik.begin() + poz, zadanie);
+        czasy.emplace(czasy.begin() + poz, czasyNaj);
+        //przeliczamy czasy w przod od poz+1 do konca
+        for(int k = poz +1 ; k<wynik.size(); k++){
+            for(int i = 0; i<m; i++){
+                // if(k==0 && i==0) czasy[k][i].first = z.czasy[wynik[k]][i]; //jesli pierwsze zadanie na pierwszej maszynie, bierzemy wynik w ciemno (jak nie zadziala to odkomentujemy i wrzucamy od poz)
+                // else if(k==0) czasy[k][i].first = czasy[k][i-1].first + z.czasy[wynik[k]][i];
+                 if(i==0) czasy[k][i].first = czasy[k-1][i].first + z.czasy[wynik[k]][i]; //pierwsza maszyna, czas skonczenia poprzedniego zadania na tej maszynie + czas obecnego
+                else czasy[k][i].first = std::max(czasy[k-1][i].first, czasy[k][i-1].first) + z.czasy[wynik[k]][i]; //maks z poprzedniego zadania i zadania na poprzedniej maszyny
+            }
+        }
+
+        //przeliczamy czasy w tyl od poz do 0
+        for(int k = poz; k>=0; k--){
+            for(int i = m-1; i>=0; i--){
+                if(k == czasy.size()-1 && i == m-1) czasy[k][i].second = z.czasy[wynik[k]][i];
+                else if(k == czasy.size()-1) czasy[k][i].second = z.czasy[wynik[k]][i] + czasy[k][i+1].second;
+                else if(i == m-1) czasy[k][i].second = z.czasy[wynik[k]][i] + czasy[k+1][i].second; 
+                else czasy[k][i].second = z.czasy[wynik[k]][i] + std::max(czasy[k+1][i].second, czasy[k][i+1].second);
+            }
+        }
     }
 
-    return {kolejnosc, C.back().back()};
+    return std::make_pair(wynik, calculateMakespan(wynik, z.czasy, m)); //zwracamy kolejność i Cmax
 }
 
 
@@ -312,25 +290,25 @@ std::pair<std::vector<int>, int> Rozwiazania::bound(){
     int UB = neh().second;
     
     while (!queue.empty()) {
-        Node current = queue.top(); //rozpatrujemy najlepsze LB
+        Node obecny = queue.top(); //rozpatrujemy najlepsze LB
         queue.pop(); //wywalamy z kolejki
 
-        if (current.LB >= UB) {
+        if (obecny.LB >= UB) {
             continue; //jesli mamy lepszy wynik to robimy dalej -> bierzemy kolejny node
         }
 
-        if (current.level == n) {  //jesli damy wszystkie zadania to liczymy Cmax
-            int currentMakespan = calculateMakespan(current.path,z.czasy, m);
+        if (obecny.level == n) {  //jesli damy wszystkie zadania to liczymy Cmax
+            int currentMakespan = calculateMakespan(obecny.path,z.czasy, m);
             if (currentMakespan < UB) { //jesli jest lepsze niz UB to updatujemy
                 UB = currentMakespan;
-                najlepszeKol = current.path;
+                najlepszeKol = obecny.path;
             }
             continue; //kolejny node sprawdzamy
         }
 
         for (int j = 0; j < n; j++) { //dodajemy kolejne elementy -> kolejne węzły
-            if (!current.assigned[j]) {
-                Node child = current;
+            if (!obecny.assigned[j]) {
+                Node child = obecny;
                 child.assigned[j] = true;
                 child.path.push_back(j);
                 child.level++;
