@@ -5,10 +5,7 @@
 #include "Zadanie.h"
 #include "Rozwiazania.h"
 
-/********************************/
-/*TEST1 -> wynik 1287 (tylko neh/fneh)*/
-/*TEXT2 -> wynik 769  */
-/*TEST3 -> wynik */
+
 
 void readFile(Matrix &czasy, const std::string& filename)
 {
@@ -40,7 +37,7 @@ void readFile(Matrix &czasy, const std::string& filename)
     file.close();
     
 }
-
+/*
 int main() {
 
     //Przykładowa macierz czasów
@@ -116,3 +113,64 @@ int main() {
 
     return 0;
 }
+*/
+int main() {
+    Matrix czasy;
+    readFile(czasy, "test.txt");
+  
+    Zadanie zadanie(czasy);
+    Rozwiazania roz(zadanie);
+/*
+    
+    std::cout << "\n--- Algorytm brute-force (dokładny) ---\n";
+    auto start_bf = std::chrono::high_resolution_clock::now();
+    int cmax = roz.bruteForceMakespan();  // C_opt
+    auto end_bf = std::chrono::high_resolution_clock::now();
+    auto duration_bf = std::chrono::duration_cast<std::chrono::microseconds>(end_bf - start_bf);
+    std::cout << "Brute force Cmax = " << cmax << " (Czas: " << duration_bf.count() << " μs)\n";
+*/
+    std::cout << "\n--- Algorytm NEH ---\n";
+    auto start = std::chrono::high_resolution_clock::now();
+    auto wynik = roz.neh();  // C_heur
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    //double rpd_neh = ((wynik.second - cmax) / (double)cmax) * 100.0;
+    std::cout << "NEH Cmax = " << wynik.second << " (Czas: " << duration.count() << " μs)\n";
+   // std::cout << "Błąd RPD = " << rpd_neh << " %\n";
+
+    std::cout << "\n--- Algorytm FNEH ---\n";
+    start = std::chrono::high_resolution_clock::now();
+    auto wynik_fneh = roz.fneh();
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    //double rpd_fneh = ((wynik_fneh.second - cmax) / (double)cmax) * 100.0;
+    std::cout << "FNEH Cmax = " << wynik_fneh.second << " (Czas: " << duration.count() << " μs)\n";
+   // std::cout << "Błąd RPD = " << rpd_fneh << " %\n";
+
+    std::cout << "\n--- Algorytm Johnsona ---\n";
+    start = std::chrono::high_resolution_clock::now();
+    auto wynik_john = roz.johnsonAlgorithm();
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+   // double rpd_john = ((wynik_john.second - cmax) / (double)cmax) * 100.0;
+    std::cout << "Johnson Cmax = " << wynik_john.second << " (Czas: " << duration.count() << " μs)\n";
+    //std::cout << "Błąd RPD = " << rpd_john << " %\n";
+
+
+/*
+    std::cout << "\n=== BOUND and BRANCH ===" << std::endl;
+    start= std::chrono::high_resolution_clock::now();
+    auto wynik_bb = roz.bound();
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    double rpd_bound = ((wynik_bb.second - cmax) / (double)cmax) * 100.0;
+    std::cout << "Kolejnosc: ";
+    for (int zad : wynik_bb.first)
+        std::cout << zad << " ";
+    std::cout << "\nCmax = " << wynik_bb.second << " (Czas: " << duration.count() << " μs)"<< std::endl;
+    std::cout << "Błąd RPD = " << rpd_bound << " %\n";
+*/
+
+    return 0;
+}
+
